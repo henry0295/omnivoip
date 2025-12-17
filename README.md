@@ -6,7 +6,7 @@
 
 ## 🎯 Descripción
 
-OmniVoIP es una plataforma completa de Contact Center de código abierto, similar a OmniLeads, que incluye:
+OmniVoIP es una plataforma completa de Contact Center de código abierto, que incluye:
 
 - **Telefonía VoIP**: Asterisk PBX + Kamailio SIP Proxy
 - **WebRTC**: Llamadas desde navegador web
