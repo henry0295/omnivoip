@@ -2,22 +2,19 @@
 # OmniVoIP Asterisk PBX Dockerfile
 # =============================================================================
 
-FROM debian:bullseye-slim
+FROM andrius/asterisk:20-current
 
-LABEL maintainer="henry0295"
-LABEL description="OmniVoIP Asterisk Contact Center PBX"
+LABEL maintainer="VOZIP COLOMBIA"
+LABEL description="OmniVoIP Asterisk Contact Center PBX with PJSIP, WebRTC, ARI"
+LABEL version="20.0"
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install Asterisk and dependencies
+# Install additional dependencies
 RUN apt-get update && apt-get install -y \
-    asterisk \
-    asterisk-modules \
-    asterisk-config \
-    asterisk-core-sounds-en \
-    asterisk-core-sounds-en-gsm \
-    asterisk-moh-opsound-gsm \
-    asterisk-dahdi \
+    sox \
+    lame \
+    ffmpeg \
     sox \
     lame \
     ffmpeg \
