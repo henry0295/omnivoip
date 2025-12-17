@@ -1,0 +1,35 @@
+# Certificates Directory
+
+This directory is for SSL/TLS certificates.
+
+## Production
+
+Replace self-signed certificates with proper SSL certificates from:
+- Let's Encrypt (certbot)
+- Commercial CA
+- Your organization's PKI
+
+## Files Required
+
+- `certificate.pem` - SSL certificate
+- `private.key` - Private key
+- `ca-bundle.crt` - CA certificate chain (optional)
+
+## Generate Self-Signed (Development Only)
+
+```bash
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+  -keyout private.key \
+  -out certificate.pem \
+  -subj "/C=US/ST=State/L=City/O=OmniVoIP/CN=localhost"
+```
+
+## Let's Encrypt (Production)
+
+```bash
+certbot certonly --standalone -d yourdomain.com
+cp /etc/letsencrypt/live/yourdomain.com/fullchain.pem certificate.pem
+cp /etc/letsencrypt/live/yourdomain.com/privkey.pem private.key
+```
+
+**Note**: Never commit real certificates to version control!

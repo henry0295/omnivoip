@@ -1,0 +1,108 @@
+# Environment variables
+.env
+.env.local
+.env.*.local
+*.env
+
+# Docker volumes
+volumes/
+data/
+
+# Logs
+*.log
+logs/
+*.log.*
+
+# Backups
+backups/
+*.sql
+*.dump
+*.bak
+
+# Certificates (regenerate locally)
+*.pem
+*.key
+*.crt
+*.csr
+!certs/.gitkeep
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+venv/
+env/
+ENV/
+
+# Node
+node_modules/
+npm-debug.log
+yarn-error.log
+yarn-debug.log
+.npm
+.yarn-integrity
+package-lock.json
+yarn.lock
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# OS
+Thumbs.db
+.Spotlight-V100
+.Trashes
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.cache
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Media files (recordings, etc)
+media/
+recordings/
+callrecs/
+
+# Compiled
+*.class
+*.o
+*.obj
+*.dll
+*.exe
+
+# Test coverage
+.coverage
+htmlcov/
+.pytest_cache/
+.tox/
+
+# Docker
+.docker/
+docker-compose.override.yml

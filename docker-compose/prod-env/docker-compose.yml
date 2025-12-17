@@ -1,0 +1,390 @@
+version: '3.8'
+
+services:
+  # ==================== DATABASE ====================
+  postgresql:
+    image: ${POSTGRES_IMG}
+    container_name: ${PROJECT_NAME}-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ../configs/postgres:/docker-entrypoint-initdb.d
+    ports:
+      - "${POSTGRES_EXT_PORT}:5432"
+    networks:
+      - omnivoip_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Dialer PostgreSQL (separate database)
+  dialer-postgresql:
+    image: ${POSTGRES_IMG}
+    container_name: ${PROJECT_NAME}-dialer-postgres
+    environment:
+      POSTGRES_DB: ${DIALER_POSTGRES_DB}
+      POSTGRES_USER: ${DIALER_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${DIALER_POSTGRES_PASSWORD}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - dialer_postgres_data:/var/lib/postgresql/data
+    ports:
+      - "${DIALER_POSTGRES_PORT}:5432"
+    networks:
+      - omnivoip_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DIALER_POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ==================== CACHE ====================
+  redis:
+    image: ${REDIS_IMG}
+    container_name: ${PROJECT_NAME}-redis
+    command: redis-server --requirepass ${REDIS_PASSWORD} --appendonly yes
+    volumes:
+      - redis_data:/data
+    ports:
+      - "${REDIS_EXT_PORT}:6379"
+    networks:
+      - omnivoip_net
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ==================== OBJECT STORAGE ====================
+  minio:
+    image: ${MINIO_IMG}
+    container_name: ${PROJECT_NAME}-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_HTTP_ADMIN_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_HTTP_ADMIN_PASS}
+    volumes:
+      - minio_data:/data
+    ports:
+      - "${MINIO_EXT_PORT}:9000"
+      - "${MINIO_EXT_CONSOLE_PORT}:9001"
+    networks:
+      - omnivoip_net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    restart: unless-stopped
+
+  # ==================== MESSAGE QUEUE ====================
+  gearman:
+    image: ${GEARMAN_IMG}
+    container_name: ${PROJECT_NAME}-gearman
+    ports:
+      - "${GEARMAN_EXT_PORT}:4730"
+    networks:
+      - omnivoip_net
+    restart: unless-stopped
+
+  # ==================== DJANGO BACKEND ====================
+  django-app:
+    image: ${BACKEND_IMG}
+    container_name: ${PROJECT_NAME}-django
+    build:
+      context: ../../components/backend
+      dockerfile: Dockerfile
+    depends_on:
+      postgresql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    environment:
+      # Django
+      DJANGO_SETTINGS_MODULE: omnivoip.settings.production
+      SECRET_KEY: ${DJANGO_SECRET_KEY}
+      DEBUG: ${DJANGO_DEBUG}
+      ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS}
+      
+      # Database
+      POSTGRES_HOST: ${POSTGRES_HOSTNAME}
+      POSTGRES_PORT: ${POSTGRES_PORT}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      
+      # Redis
+      REDIS_HOST: ${REDIS_HOSTNAME}
+      REDIS_PORT: ${REDIS_PORT}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      
+      # MinIO/S3
+      S3_STORAGE_ENABLED: ${S3_STORAGE_ENABLED}
+      MINIO_ENDPOINT: ${BUCKET_ENDPOINT_MINIO}
+      MINIO_ACCESS_KEY: ${BUCKET_ACCESS_KEY_ID}
+      MINIO_SECRET_KEY: ${BUCKET_SECRET_ACCESS_KEY}
+      BUCKET_NAME: ${BUCKET_NAME}
+      
+      # Session
+      SESSION_COOKIE_AGE: ${SESSION_COOKIE_AGE}
+      
+      # Gearman
+      GEARMAN_SERVER: ${GEARMAN_HOSTNAME}:${GEARMAN_PORT}
+    volumes:
+      - django_media:/app/media
+      - django_static:/app/static
+      - django_logs:/app/logs
+    ports:
+      - "${UWSGI_PORT}:8000"
+    networks:
+      - omnivoip_net
+    restart: unless-stopped
+
+  # ==================== WEBSOCKETS ====================
+  websockets:
+    image: ${WEBSOCKETS_IMG}
+    container_name: ${PROJECT_NAME}-websockets
+    build:
+      context: ../../components/websockets
+      dockerfile: Dockerfile
+    depends_on:
+      - redis
+    environment:
+      REDIS_URL: redis://:${REDIS_PASSWORD}@${REDIS_HOSTNAME}:${REDIS_PORT}/0
+      WEBSOCKET_PORT: ${WEBSOCKET_PORT}
+    ports:
+      - "${WEBSOCKET_EXT_PORT}:8000"
+    networks:
+      - omnivoip_net
+    restart: unless-stopped
+
+  # ==================== CELERY WORKERS ====================
+  celery-worker:
+    image: ${BACKEND_IMG}
+    container_name: ${PROJECT_NAME}-celery-worker
+    command: celery -A omnivoip.celery worker --loglevel=info --concurrency=4
+    depends_on:
+      - django-app
+      - redis
+    environment:
+      POSTGRES_HOST: ${POSTGRES_HOSTNAME}
+      REDIS_HOST: ${REDIS_HOSTNAME}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      CELERY_BROKER_URL: ${CELERY_BROKER_URL}
+      CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND}
+    volumes:
+      - django_media:/app/media
+      - django_logs:/app/logs
+    networks:
+      - omnivoip_net
+    deploy:
+      replicas: ${WORKER_REPLICAS}
+    restart: unless-stopped
+
+  celery-beat:
+    image: ${BACKEND_IMG}
+    container_name: ${PROJECT_NAME}-celery-beat
+    command: celery -A omnivoip.celery beat --loglevel=info
+    depends_on:
+      - django-app
+      - redis
+    environment:
+      REDIS_HOST: ${REDIS_HOSTNAME}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      CELERY_BROKER_URL: ${CELERY_BROKER_URL}
+    networks:
+      - omnivoip_net
+    restart: unless-stopped
+
+  # ==================== ASTERISK PBX ====================
+  asterisk:
+    image: ${ASTERISK_IMG}
+    container_name: ${PROJECT_NAME}-asterisk
+    build:
+      context: ../../components/asterisk
+      dockerfile: Dockerfile
+    cap_add:
+      - NET_ADMIN
+      - SYS_NICE
+    depends_on:
+      - postgresql
+      - redis
+    environment:
+      ACD_HOSTNAME: ${ACD_HOSTNAME}
+      ACD_AMI_USER: ${ACD_AMI_USER}
+      ACD_AMI_PASSWORD: ${ACD_AMI_PASSWORD}
+      ACD_LOG_LEVEL: ${ACD_LOG_LEVEL}
+      POSTGRES_HOST: ${POSTGRES_HOSTNAME}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - asterisk_spool:/var/spool/asterisk
+      - asterisk_logs:/var/log/asterisk
+      - asterisk_sounds:/var/lib/asterisk/sounds
+      - ../configs/asterisk:/etc/asterisk/custom
+    ports:
+      - "5060:5060/udp"
+      - "${ACD_RTP_PORT_MIN}-${ACD_RTP_PORT_MAX}:${ACD_RTP_PORT_MIN}-${ACD_RTP_PORT_MAX}/udp"
+    networks:
+      - omnivoip_net
+    restart: unless-stopped
+
+  # ==================== KAMAILIO (WebRTC SIP Proxy) ====================
+  kamailio:
+    image: ${KAMAILIO_IMG}
+    container_name: ${PROJECT_NAME}-kamailio
+    build:
+      context: ../../components/kamailio
+      dockerfile: Dockerfile
+    depends_on:
+      - asterisk
+    environment:
+      KAMAILIO_HOSTNAME: ${KAMAILIO_WEBRTC_HOSTNAME}
+      SHM_SIZE: ${SHM_SIZE}
+      PKG_SIZE: ${PKG_SIZE}
+    volumes:
+      - ../certs:${KAMAILIO_CERTS_LOCATION}
+      - ../configs/kamailio:/etc/kamailio/custom
+    ports:
+      - "${KAMAILIO_WEBRTC_SIP_PORT}:10060/udp"
+      - "${KAMAILIO_HTTPS_PORT}:14443"
+    networks:
+      - omnivoip_net
+    restart: unless-stopped
+
+  # ==================== RTPENGINE (Media Proxy) ====================
+  rtpengine:
+    image: ${RTPENGINE_IMG}
+    container_name: ${PROJECT_NAME}-rtpengine
+    build:
+      context: ../../components/rtpengine
+      dockerfile: Dockerfile
+    cap_add:
+      - NET_ADMIN
+    environment:
+      RTPENGINE_HOSTNAME: ${RTPENGINE_HOSTNAME}
+      RTPENGINE_LOG_LEVEL: ${RTPENGINE_LOG_LEVEL}
+    volumes:
+      - ../configs/rtpengine:/etc/rtpengine
+    ports:
+      - "${RTPENGINE_BIND_UDP_PORT}:22222/udp"
+      - "${RTPENGINE_RTP_PORT_MIN}-${RTPENGINE_RTP_PORT_MAX}:${RTPENGINE_RTP_PORT_MIN}-${RTPENGINE_RTP_PORT_MAX}/udp"
+    networks:
+      - omnivoip_net
+    restart: unless-stopped
+
+  # ==================== DIALER API ====================
+  dialer-api:
+    image: ${DIALER_API_IMG}
+    container_name: ${PROJECT_NAME}-dialer-api
+    build:
+      context: ../../components/dialer/api
+      dockerfile: Dockerfile
+    depends_on:
+      dialer-postgresql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      DIALER_POSTGRES_SERVER: ${DIALER_POSTGRES_SERVER}
+      DIALER_POSTGRES_PORT: ${DIALER_POSTGRES_PORT}
+      DIALER_POSTGRES_DB: ${DIALER_POSTGRES_DB}
+      DIALER_POSTGRES_USER: ${DIALER_POSTGRES_USER}
+      DIALER_POSTGRES_PASSWORD: ${DIALER_POSTGRES_PASSWORD}
+      DIALER_REDIS_SERVER: ${DIALER_REDIS_SERVER}
+      DIALER_REDIS_PORT: ${DIALER_REDIS_PORT}
+      DIALER_PASSWORD: ${DIALER_PASSWORD}
+    ports:
+      - "${DIALER_API_EXT_PORT}:1440"
+    networks:
+      - omnivoip_net
+    restart: unless-stopped
+
+  # ==================== DIALER WORKERS ====================
+  dialer-worker:
+    image: ${DIALER_WORKER_IMG}
+    container_name: ${PROJECT_NAME}-dialer-worker
+    build:
+      context: ../../components/dialer/worker
+      dockerfile: Dockerfile
+    depends_on:
+      - dialer-api
+      - gearman
+    environment:
+      DIALER_API_HOST: ${DIALER_API_HOST}
+      DIALER_CAPS: ${DIALER_CAPS}
+      DIALER_GEARMAN_JOBS: ${DIALER_GEARMAN_JOBS}
+      GEARMAN_SERVER: ${GEARMAN_HOSTNAME}:${GEARMAN_PORT}
+      DIALER_PYTHON_LOGLEVEL: ${DIALER_PYTHON_LOGLEVEL}
+    networks:
+      - omnivoip_net
+    deploy:
+      replicas: ${DIALER_PROCESS_CAMPAIGN_REPLICAS}
+    restart: unless-stopped
+
+  # ==================== FRONTEND ====================
+  frontend:
+    image: ${FRONTEND_IMG}
+    container_name: ${PROJECT_NAME}-frontend
+    build:
+      context: ../../components/frontend
+      dockerfile: Dockerfile
+    depends_on:
+      - django-app
+    networks:
+      - omnivoip_net
+
+  # ==================== NGINX ====================
+  nginx:
+    image: ${NGINX_IMG}
+    container_name: ${PROJECT_NAME}-nginx
+    depends_on:
+      - django-app
+      - websockets
+      - frontend
+    volumes:
+      - ../configs/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ../configs/nginx/conf.d:/etc/nginx/conf.d:ro
+      - ../certs:/etc/nginx/certs:ro
+      - django_static:/var/www/static:ro
+      - django_media:/var/www/media:ro
+    ports:
+      - "80:80"
+      - "${NGINX_EXT_PORT}:443"
+    networks:
+      - omnivoip_net
+    restart: unless-stopped
+
+# ==================== NETWORKS ====================
+networks:
+  omnivoip_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: ${SUBNET}
+          gateway: ${GATEWAY}
+
+# ==================== VOLUMES ====================
+volumes:
+  postgres_data:
+  dialer_postgres_data:
+  redis_data:
+  minio_data:
+  django_media:
+  django_static:
+  django_logs:
+  asterisk_spool:
+  asterisk_logs:
+  asterisk_sounds:
