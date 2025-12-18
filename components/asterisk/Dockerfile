@@ -2,59 +2,21 @@
 # OmniVoIP Asterisk PBX Dockerfile
 # =============================================================================
 
-FROM debian:bullseye-slim
+FROM clearlydecoded/asterisk:20-lts
 
 LABEL maintainer="VOZIP COLOMBIA"
 LABEL description="OmniVoIP Asterisk Contact Center PBX with PJSIP, WebRTC, ARI"
 LABEL version="20.0"
 
-ENV DEBIAN_FRONTEND=noninteractive
-ENV ASTERISK_VERSION=20.10.1
+USER root
 
-# Install build dependencies and runtime packages
+# Install additional runtime tools
 RUN apt-get update && apt-get install -y \
-    build-essential \
-    wget \
-    libssl-dev \
-    libncurses5-dev \
-    libnewt-dev \
-    libxml2-dev \
-    libsqlite3-dev \
-    uuid-dev \
-    libjansson-dev \
-    libspeex-dev \
-    libspeexdsp-dev \
-    libedit-dev \
-    libcurl4-openssl-dev \
-    libpq-dev \
     sox \
-    lame \
-    ffmpeg \
     curl \
     postgresql-client \
+    && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
-
-# Download and compile Asterisk
-RUN cd /tmp \
-    && wget https://downloads.asterisk.org/pub/telephony/asterisk/asterisk-${ASTERISK_VERSION}.tar.gz \
-    && tar -xzf asterisk-${ASTERISK_VERSION}.tar.gz \
-    && cd asterisk-${ASTERISK_VERSION} \
-    && ./configure --with-jansson-bundled --with-pjproject-bundled \
-    && make menuselect.makeopts \
-    && menuselect/menuselect --enable CORE-SOUNDS-EN-WAV --enable MOH-OPSOUND-WAV \
-       --enable app_queue --enable app_dial --enable app_voicemail \
-       --enable chan_pjsip --enable res_pjsip --enable res_ari \
-       menuselect.makeopts \
-    && make -j$(nproc) \
-    && make install \
-    && make samples \
-    && make config \
-    && cd / \
-    && rm -rf /tmp/asterisk-${ASTERISK_VERSION}*
-
-# Create Asterisk user and directories
-RUN useradd -m asterisk \
-    && chown -R asterisk:asterisk /var/*/asterisk /usr/*/asterisk /etc/asterisk
 
 # Create directories
 RUN mkdir -p \
