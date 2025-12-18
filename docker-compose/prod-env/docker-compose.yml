@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # ==================== DATABASE ====================
   postgresql:
@@ -172,7 +170,6 @@ services:
   # ==================== CELERY WORKERS ====================
   celery-worker:
     image: ${BACKEND_IMG}
-    container_name: ${PROJECT_NAME}-celery-worker
     command: celery -A omnivoip.celery worker --loglevel=info --concurrency=4
     depends_on:
       - django-app
@@ -315,7 +312,6 @@ services:
   # ==================== DIALER WORKERS ====================
   dialer-worker:
     image: ${DIALER_WORKER_IMG}
-    container_name: ${PROJECT_NAME}-dialer-worker
     build:
       context: ../../components/dialer/worker
       dockerfile: Dockerfile
