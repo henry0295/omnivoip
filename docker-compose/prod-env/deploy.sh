@@ -4,9 +4,10 @@
 # =============================================================================
 # Description: Automated deployment for VPS/Cloud environments
 # Usage:       export HOST_IP=x.x.x.x && ./deploy.sh
+#              export DOMAIN=your-domain.com && ./deploy.sh
 # =============================================================================
 
-set -Eeuo pipefail
+set -Eeu
 IFS=$'\n\t'
 
 # -----------------------------------------------------------------------------
@@ -18,7 +19,8 @@ log_error() { echo -e "\033[0;31m[ERROR]\033[0m $1" >&2; exit 1; }
 
 on_error() {
     local code=$?
-    echo -e "\033[0;31mError on line $LINENO executing: '$BASH_COMMAND' (code $code)\033[0m" >&2
+    echo -e "\033[0;31m[ERROR]\033[0m Failed at line $LINENO. Check logs above." >&2
+    exit 1
 }
 trap on_error ERR
 
