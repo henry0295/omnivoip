@@ -239,45 +239,47 @@ services:
     restart: unless-stopped
 
   # ==================== KAMAILIO (WebRTC SIP Proxy) ====================
-  kamailio:
-    # image: ${KAMAILIO_IMG}
-    container_name: ${PROJECT_NAME}-kamailio
-    build:
-      context: ../../components/kamailio
-      dockerfile: Dockerfile
-    depends_on:
-      - asterisk
-    environment:
-      KAMAILIO_HOSTNAME: ${KAMAILIO_WEBRTC_HOSTNAME}
-      SHM_SIZE: ${SHM_SIZE}
-      PKG_SIZE: ${PKG_SIZE}
-    volumes:
-      - ../certs:${KAMAILIO_CERTS_LOCATION}
-      - ../configs/kamailio:/etc/kamailio/custom
-    ports:
-      - "${KAMAILIO_WEBRTC_SIP_PORT}:10060/udp"
-      - "${KAMAILIO_HTTPS_PORT}:14443"
-    networks:
-      - omnivoip_net
-    restart: unless-stopped
+  # TODO: Fix build issues - commented temporarily
+  # kamailio:
+  #   # image: ${KAMAILIO_IMG}
+  #   container_name: ${PROJECT_NAME}-kamailio
+  #   build:
+  #     context: ../../components/kamailio
+  #     dockerfile: Dockerfile
+  #   depends_on:
+  #     - asterisk
+  #   environment:
+  #     KAMAILIO_HOSTNAME: ${KAMAILIO_WEBRTC_HOSTNAME}
+  #     SHM_SIZE: ${SHM_SIZE}
+  #     PKG_SIZE: ${PKG_SIZE}
+  #   volumes:
+  #     - ../certs:${KAMAILIO_CERTS_LOCATION}
+  #     - ../configs/kamailio:/etc/kamailio/custom
+  #   ports:
+  #     - "${KAMAILIO_WEBRTC_SIP_PORT}:10060/udp"
+  #     - "${KAMAILIO_HTTPS_PORT}:14443"
+  #   networks:
+  #     - omnivoip_net
+  #   restart: unless-stopped
 
   # ==================== RTPENGINE (Media Proxy) ====================
-  rtpengine:
-    # image: ${RTPENGINE_IMG}
-    container_name: ${PROJECT_NAME}-rtpengine
-    build:
-      context: ../../components/rtpengine
-      dockerfile: Dockerfile
-    cap_add:
-      - NET_ADMIN
-    environment:
-      RTPENGINE_HOSTNAME: ${RTPENGINE_HOSTNAME}
-      RTPENGINE_LOG_LEVEL: ${RTPENGINE_LOG_LEVEL}
-    volumes:
-      - ../configs/rtpengine:/etc/rtpengine
-    ports:
-      - "${RTPENGINE_BIND_UDP_PORT}:22222/udp"
-      - "${RTPENGINE_RTP_PORT_MIN}-${RTPENGINE_RTP_PORT_MAX}:${RTPENGINE_RTP_PORT_MIN}-${RTPENGINE_RTP_PORT_MAX}/udp"
+  # TODO: Fix build issues - commented temporarily
+  # rtpengine:
+  #   # image: ${RTPENGINE_IMG}
+  #   container_name: ${PROJECT_NAME}-rtpengine
+  #   build:
+  #     context: ../../components/rtpengine
+  #     dockerfile: Dockerfile
+  #   cap_add:
+  #     - NET_ADMIN
+  #   environment:
+  #     RTPENGINE_HOSTNAME: ${RTPENGINE_HOSTNAME}
+  #     RTPENGINE_LOG_LEVEL: ${RTPENGINE_LOG_LEVEL}
+  #   volumes:
+  #     - ../configs/rtpengine:/etc/rtpengine
+  #   ports:
+  #     - "${RTPENGINE_BIND_UDP_PORT}:22222/udp"
+  #     - "${RTPENGINE_RTP_PORT_MIN}-${RTPENGINE_RTP_PORT_MAX}:${RTPENGINE_RTP_PORT_MIN}-${RTPENGINE_RTP_PORT_MAX}/udp"
     networks:
       - omnivoip_net
     restart: unless-stopped
