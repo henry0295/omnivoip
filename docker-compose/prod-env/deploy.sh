@@ -331,9 +331,13 @@ deploy_services() {
     
     cd "$INSTALL_DIR/docker-compose/prod-env"
     
+    # Clean Docker cache to ensure fresh builds
+    log_info "Cleaning Docker cache..."
+    docker system prune -af --volumes || log_warn "Failed to clean Docker cache"
+    
     # Build custom images first (don't pull non-existent images)
     log_info "Building Docker images (this may take 10-15 minutes)..."
-    docker compose build || log_error "Docker build failed"
+    docker compose build --no-cache || log_error "Docker build failed"
     
     # Start services (will pull missing base images automatically)
     log_info "Starting services..."
