@@ -330,13 +330,17 @@ deploy_services() {
     
     cd "$INSTALL_DIR/docker-compose/prod-env"
     
-    # Pull images
-    log_info "Pulling Docker images..."
-    ./manage.sh pull
+    # Build custom images (don't pull non-existent images)
+    log_info "Building Docker images..."
+    docker compose build --no-cache
+    
+    # Pull only base images (postgres, redis, nginx, etc.)
+    log_info "Pulling base Docker images..."
+    docker compose pull postgres redis minio nginx || true
     
     # Start services
     log_info "Starting services..."
-    ./manage.sh start
+    docker compose up -d
     
     # Wait for services to be ready
     log_info "Waiting for services to initialize (30s)..."
@@ -344,9 +348,9 @@ deploy_services() {
     
     # Run migrations
     log_info "Running database migrations..."
-    ./manage.sh db-migrate
+    docker compose exec -T django python manage.py migrate || log_warn "Migrations failed, may need manual intervention"
     
-    # Reset admin password
+    # Create superuser
     log_info "Setting up admin user..."
     ./manage.sh reset-pass
 }
