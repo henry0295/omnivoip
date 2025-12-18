@@ -1,10 +1,13 @@
-FROM kamailio/kamailio:5.7-alpine
+FROM alpine:3.18
 
 LABEL maintainer="VOZIP COLOMBIA"
 LABEL description="Kamailio SIP Proxy for OmniVoIP"
 
-# Install dependencies
+# Install Kamailio and dependencies
 RUN apk add --no-cache \
+    kamailio \
+    kamailio-postgres \
+    kamailio-tls \
     postgresql-dev \
     openssl \
     net-tools
