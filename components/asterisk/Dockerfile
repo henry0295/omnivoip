@@ -12,9 +12,6 @@ LABEL version="20.0"
 RUN apk add --no-cache \
     asterisk \
     asterisk-sample-config \
-    asterisk-pjsip \
-    asterisk-sounds-en \
-    asterisk-sounds-moh \
     sox \
     curl \
     postgresql-client \
