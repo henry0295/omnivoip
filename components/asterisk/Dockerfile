@@ -2,21 +2,26 @@
 # OmniVoIP Asterisk PBX Dockerfile
 # =============================================================================
 
-FROM clearlydecoded/asterisk:20-lts
+FROM alpine:3.18
 
 LABEL maintainer="VOZIP COLOMBIA"
 LABEL description="OmniVoIP Asterisk Contact Center PBX with PJSIP, WebRTC, ARI"
 LABEL version="20.0"
 
-USER root
-
-# Install additional runtime tools
-RUN apt-get update && apt-get install -y \
+# Install Asterisk and dependencies from Alpine repos
+RUN apk add --no-cache \
+    asterisk \
+    asterisk-sample-config \
+    asterisk-pjsip \
+    asterisk-sounds-en \
+    asterisk-sounds-moh \
     sox \
     curl \
     postgresql-client \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+    && mkdir -p /var/spool/asterisk/monitor \
+                 /var/spool/asterisk/outgoing \
+                 /var/log/asterisk \
+    && chown -R asterisk:asterisk /var/*/asterisk /etc/asterisk
 
 # Create directories
 RUN mkdir -p \
