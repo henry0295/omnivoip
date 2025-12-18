@@ -96,7 +96,7 @@ services:
 
   # ==================== DJANGO BACKEND ====================
   django-app:
-    image: ${BACKEND_IMG}
+    # image: ${BACKEND_IMG}
     container_name: ${PROJECT_NAME}-django
     build:
       context: ../../components/backend
@@ -151,7 +151,7 @@ services:
 
   # ==================== WEBSOCKETS ====================
   websockets:
-    image: ${WEBSOCKETS_IMG}
+    # image: ${WEBSOCKETS_IMG}
     container_name: ${PROJECT_NAME}-websockets
     build:
       context: ../../components/websockets
@@ -169,7 +169,7 @@ services:
 
   # ==================== CELERY WORKERS ====================
   celery-worker:
-    image: ${BACKEND_IMG}
+    # image: ${BACKEND_IMG}
     command: celery -A omnivoip.celery worker --loglevel=info --concurrency=4
     depends_on:
       - django-app
@@ -190,7 +190,7 @@ services:
     restart: unless-stopped
 
   celery-beat:
-    image: ${BACKEND_IMG}
+    # image: ${BACKEND_IMG}
     container_name: ${PROJECT_NAME}-celery-beat
     command: celery -A omnivoip.celery beat --loglevel=info
     depends_on:
@@ -206,7 +206,7 @@ services:
 
   # ==================== ASTERISK PBX ====================
   asterisk:
-    image: ${ASTERISK_IMG}
+    # image: ${ASTERISK_IMG}
     container_name: ${PROJECT_NAME}-asterisk
     build:
       context: ../../components/asterisk
@@ -240,7 +240,7 @@ services:
 
   # ==================== KAMAILIO (WebRTC SIP Proxy) ====================
   kamailio:
-    image: ${KAMAILIO_IMG}
+    # image: ${KAMAILIO_IMG}
     container_name: ${PROJECT_NAME}-kamailio
     build:
       context: ../../components/kamailio
@@ -263,7 +263,7 @@ services:
 
   # ==================== RTPENGINE (Media Proxy) ====================
   rtpengine:
-    image: ${RTPENGINE_IMG}
+    # image: ${RTPENGINE_IMG}
     container_name: ${PROJECT_NAME}-rtpengine
     build:
       context: ../../components/rtpengine
@@ -284,7 +284,7 @@ services:
 
   # ==================== DIALER API ====================
   dialer-api:
-    image: ${DIALER_API_IMG}
+    # image: ${DIALER_API_IMG}
     container_name: ${PROJECT_NAME}-dialer-api
     build:
       context: ../../components/dialer/api
@@ -311,7 +311,7 @@ services:
 
   # ==================== DIALER WORKERS ====================
   dialer-worker:
-    image: ${DIALER_WORKER_IMG}
+    # image: ${DIALER_WORKER_IMG}
     build:
       context: ../../components/dialer/worker
       dockerfile: Dockerfile
@@ -332,7 +332,7 @@ services:
 
   # ==================== FRONTEND ====================
   frontend:
-    image: ${FRONTEND_IMG}
+    # image: ${FRONTEND_IMG}
     container_name: ${PROJECT_NAME}-frontend
     build:
       context: ../../components/frontend
