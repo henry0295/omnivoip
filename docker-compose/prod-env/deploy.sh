@@ -330,21 +330,17 @@ deploy_services() {
     
     cd "$INSTALL_DIR/docker-compose/prod-env"
     
-    # Build custom images (don't pull non-existent images)
-    log_info "Building Docker images..."
-    docker compose build --no-cache
+    # Build custom images first (don't pull non-existent images)
+    log_info "Building Docker images (this may take 10-15 minutes)..."
+    docker compose build || log_error "Docker build failed"
     
-    # Pull only base images (postgres, redis, nginx, etc.)
-    log_info "Pulling base Docker images..."
-    docker compose pull postgres redis minio nginx || true
-    
-    # Start services
+    # Start services (will pull missing base images automatically)
     log_info "Starting services..."
-    docker compose up -d
+    docker compose up -d || log_error "Failed to start services"
     
     # Wait for services to be ready
-    log_info "Waiting for services to initialize (30s)..."
-    sleep 30
+    log_info "Waiting for services to initialize (60s)..."
+    sleep 60
     
     # Run migrations
     log_info "Running database migrations..."
