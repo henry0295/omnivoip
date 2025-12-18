@@ -179,20 +179,29 @@ setup_networking() {
     
     # Prompt for domain if not set
     if [[ -z "${DOMAIN:-}" ]]; then
-        echo ""
-        echo "=========================================="
-        echo "  Domain Configuration"
-        echo "=========================================="
-        echo ""
-        echo "Enter your domain name (e.g., omnivoip.example.com)"
-        echo "Press ENTER to use IP address: $PUBLIC_IP"
-        echo ""
-        read -p "Domain [default: $PUBLIC_IP]: " DOMAIN
-        
-        # Use public IP if no domain provided
-        if [[ -z "$DOMAIN" ]]; then
+        # Check if running interactively
+        if [[ -t 0 ]]; then
+            # Interactive mode - can read from user
+            echo ""
+            echo "=========================================="
+            echo "  Domain Configuration"
+            echo "=========================================="
+            echo ""
+            echo "Enter your domain name (e.g., omnivoip.example.com)"
+            echo "Press ENTER to use IP address: $PUBLIC_IP"
+            echo ""
+            read -p "Domain [default: $PUBLIC_IP]: " DOMAIN || true
+            
+            # Use public IP if no domain provided
+            if [[ -z "$DOMAIN" ]]; then
+                DOMAIN="$PUBLIC_IP"
+                log_warn "No domain provided, using IP: $DOMAIN"
+            fi
+        else
+            # Non-interactive mode (piped from curl) - use default
             DOMAIN="$PUBLIC_IP"
-            log_warn "No domain provided, using IP: $DOMAIN"
+            log_info "Non-interactive mode detected, using IP: $DOMAIN"
+            log_info "To set custom domain, use: export DOMAIN=your-domain.com before running"
         fi
     fi
     
