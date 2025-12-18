@@ -246,46 +246,57 @@ setup_environment() {
     cd "$INSTALL_DIR/docker-compose/prod-env"
     
     # Copy manage script
-    cp ../scripts/manage.sh ./
-    chmod +x manage.sh
+    if [[ -f ../scripts/manage.sh ]]; then
+        cp ../scripts/manage.sh ./
+        chmod +x manage.sh
+    fi
     
     # Setup .env file
     if [[ ! -f .env ]]; then
         log_info "Creating .env file from template..."
-        cp ../env.template .env
+        if [[ -f ../env.template ]]; then
+            cp ../env.template .env
+        else
+            log_error "Template file ../env.template not found!"
+        fi
     else
         log_warn ".env already exists, backing up to .env.backup"
         cp .env .env.backup
     fi
     
-    # Configure IPs
-    sed -i "s|^OML_HOSTNAME=.*|OML_HOSTNAME=${HOST_IP}|" .env
-    sed -i "s|^PUBLIC_IP=.*|PUBLIC_IP=${PUBLIC_IP}|" .env
+    # Verify .env exists
+    if [[ ! -f .env ]]; then
+        log_error ".env file could not be created"
+    fi
+    
+    # Configure IPs (use || true to avoid errors if pattern not found)
+    sed -i "s|^OML_HOSTNAME=.*|OML_HOSTNAME=${HOST_IP}|" .env || echo "OML_HOSTNAME=${HOST_IP}" >> .env
+    sed -i "s|^PUBLIC_IP=.*|PUBLIC_IP=${PUBLIC_IP}|" .env || echo "PUBLIC_IP=${PUBLIC_IP}" >> .env
     
     # Configure domain if provided
     if [[ -n "${DOMAIN:-}" ]]; then
-        sed -i "s|^FQDN=.*|FQDN=${DOMAIN}|" .env
+        sed -i "s|^FQDN=.*|FQDN=${DOMAIN}|" .env || echo "FQDN=${DOMAIN}" >> .env
     fi
     
     # Configure NAT if provided
     if [[ -n "${NAT_IPV4:-}" ]]; then
-        sed -i "s|^VOIP_NAT=.*|VOIP_NAT=true|" .env
-        sed -i "s|^#\?SIP_NAT_IPADDR=.*|SIP_NAT_IPADDR=${NAT_IPV4}|" .env
-        sed -i "s|^#\?RTP_NAT_IPADDR=.*|RTP_NAT_IPADDR=${NAT_IPV4}|" .env
+        sed -i "s|^VOIP_NAT=.*|VOIP_NAT=true|" .env || echo "VOIP_NAT=true" >> .env
+        sed -i "s|^#\?SIP_NAT_IPADDR=.*|SIP_NAT_IPADDR=${NAT_IPV4}|" .env || echo "SIP_NAT_IPADDR=${NAT_IPV4}" >> .env
+        sed -i "s|^#\?RTP_NAT_IPADDR=.*|RTP_NAT_IPADDR=${NAT_IPV4}|" .env || echo "RTP_NAT_IPADDR=${NAT_IPV4}" >> .env
     fi
     
     # Generate secure passwords
     log_info "Generating secure passwords..."
     
-    POSTGRES_PASS=$(openssl rand -base64 32)
-    REDIS_PASS=$(openssl rand -base64 32)
-    MINIO_PASS=$(openssl rand -base64 32)
-    DJANGO_SECRET=$(openssl rand -base64 64)
+    POSTGRES_PASS=$(openssl rand -base64 32 | tr -d '/+=' | head -c 32)
+    REDIS_PASS=$(openssl rand -base64 32 | tr -d '/+=' | head -c 32)
+    MINIO_PASS=$(openssl rand -base64 32 | tr -d '/+=' | head -c 32)
+    DJANGO_SECRET=$(openssl rand -base64 64 | tr -d '/+=' | head -c 64)
     
-    sed -i "s|^POSTGRES_PASSWORD=.*|POSTGRES_PASSWORD=${POSTGRES_PASS}|" .env
-    sed -i "s|^REDIS_PASSWORD=.*|REDIS_PASSWORD=${REDIS_PASS}|" .env
-    sed -i "s|^MINIO_HTTP_ADMIN_PASS=.*|MINIO_HTTP_ADMIN_PASS=${MINIO_PASS}|" .env
-    sed -i "s|^DJANGO_SECRET_KEY=.*|DJANGO_SECRET_KEY=${DJANGO_SECRET}|" .env
+    sed -i "s|^POSTGRES_PASSWORD=.*|POSTGRES_PASSWORD=${POSTGRES_PASS}|" .env || echo "POSTGRES_PASSWORD=${POSTGRES_PASS}" >> .env
+    sed -i "s|^REDIS_PASSWORD=.*|REDIS_PASSWORD=${REDIS_PASS}|" .env || echo "REDIS_PASSWORD=${REDIS_PASS}" >> .env
+    sed -i "s|^MINIO_HTTP_ADMIN_PASS=.*|MINIO_HTTP_ADMIN_PASS=${MINIO_PASS}|" .env || echo "MINIO_HTTP_ADMIN_PASS=${MINIO_PASS}" >> .env
+    sed -i "s|^DJANGO_SECRET_KEY=.*|DJANGO_SECRET_KEY=${DJANGO_SECRET}|" .env || echo "DJANGO_SECRET_KEY=${DJANGO_SECRET}" >> .env
     
     log_info "Environment configured"
 }
