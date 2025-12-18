@@ -177,10 +177,29 @@ setup_networking() {
         [[ -z "$PUBLIC_IP" ]] && PUBLIC_IP="$HOST_IP"
     fi
     
+    # Prompt for domain if not set
+    if [[ -z "${DOMAIN:-}" ]]; then
+        echo ""
+        echo "=========================================="
+        echo "  Domain Configuration"
+        echo "=========================================="
+        echo ""
+        echo "Enter your domain name (e.g., omnivoip.example.com)"
+        echo "Press ENTER to use IP address: $PUBLIC_IP"
+        echo ""
+        read -p "Domain [default: $PUBLIC_IP]: " DOMAIN
+        
+        # Use public IP if no domain provided
+        if [[ -z "$DOMAIN" ]]; then
+            DOMAIN="$PUBLIC_IP"
+            log_warn "No domain provided, using IP: $DOMAIN"
+        fi
+    fi
+    
     log_info "Host IP: $HOST_IP"
     log_info "Public IP: $PUBLIC_IP"
     [[ -n "${NAT_IPV4:-}" ]] && log_info "NAT IP: $NAT_IPV4"
-    [[ -n "${DOMAIN:-}" ]] && log_info "Domain: $DOMAIN"
+    log_info "Domain/Access URL: $DOMAIN"
 }
 
 # -----------------------------------------------------------------------------
