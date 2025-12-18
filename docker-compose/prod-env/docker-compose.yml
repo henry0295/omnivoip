@@ -169,7 +169,7 @@ services:
 
   # ==================== CELERY WORKERS ====================
   celery-worker:
-    # image: ${BACKEND_IMG}
+    image: ${BACKEND_IMG}
     command: celery -A omnivoip.celery worker --loglevel=info --concurrency=4
     depends_on:
       - django-app
@@ -190,7 +190,7 @@ services:
     restart: unless-stopped
 
   celery-beat:
-    # image: ${BACKEND_IMG}
+    image: ${BACKEND_IMG}
     container_name: ${PROJECT_NAME}-celery-beat
     command: celery -A omnivoip.celery beat --loglevel=info
     depends_on:

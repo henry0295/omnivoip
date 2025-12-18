@@ -288,15 +288,16 @@ setup_environment() {
     # Generate secure passwords
     log_info "Generating secure passwords..."
     
-    POSTGRES_PASS=$(openssl rand -base64 32 | tr -d '/+=' | head -c 32)
-    REDIS_PASS=$(openssl rand -base64 32 | tr -d '/+=' | head -c 32)
-    MINIO_PASS=$(openssl rand -base64 32 | tr -d '/+=' | head -c 32)
-    DJANGO_SECRET=$(openssl rand -base64 64 | tr -d '/+=' | head -c 64)
+    POSTGRES_PASS=$(openssl rand -hex 16)
+    REDIS_PASS=$(openssl rand -hex 16)
+    MINIO_PASS=$(openssl rand -hex 16)
+    DJANGO_SECRET=$(openssl rand -hex 32)
     
-    sed -i "s|^POSTGRES_PASSWORD=.*|POSTGRES_PASSWORD=${POSTGRES_PASS}|" .env || echo "POSTGRES_PASSWORD=${POSTGRES_PASS}" >> .env
-    sed -i "s|^REDIS_PASSWORD=.*|REDIS_PASSWORD=${REDIS_PASS}|" .env || echo "REDIS_PASSWORD=${REDIS_PASS}" >> .env
-    sed -i "s|^MINIO_HTTP_ADMIN_PASS=.*|MINIO_HTTP_ADMIN_PASS=${MINIO_PASS}|" .env || echo "MINIO_HTTP_ADMIN_PASS=${MINIO_PASS}" >> .env
-    sed -i "s|^DJANGO_SECRET_KEY=.*|DJANGO_SECRET_KEY=${DJANGO_SECRET}|" .env || echo "DJANGO_SECRET_KEY=${DJANGO_SECRET}" >> .env
+    # Use grep and append to safely update .env
+    grep -q "^POSTGRES_PASSWORD=" .env && sed -i "s|^POSTGRES_PASSWORD=.*|POSTGRES_PASSWORD=${POSTGRES_PASS}|" .env || echo "POSTGRES_PASSWORD=${POSTGRES_PASS}" >> .env
+    grep -q "^REDIS_PASSWORD=" .env && sed -i "s|^REDIS_PASSWORD=.*|REDIS_PASSWORD=${REDIS_PASS}|" .env || echo "REDIS_PASSWORD=${REDIS_PASS}" >> .env
+    grep -q "^MINIO_HTTP_ADMIN_PASS=" .env && sed -i "s|^MINIO_HTTP_ADMIN_PASS=.*|MINIO_HTTP_ADMIN_PASS=${MINIO_PASS}|" .env || echo "MINIO_HTTP_ADMIN_PASS=${MINIO_PASS}" >> .env
+    grep -q "^DJANGO_SECRET_KEY=" .env && sed -i "s|^DJANGO_SECRET_KEY=.*|DJANGO_SECRET_KEY=${DJANGO_SECRET}|" .env || echo "DJANGO_SECRET_KEY=${DJANGO_SECRET}" >> .env
     
     log_info "Environment configured"
 }
