@@ -280,9 +280,9 @@ services:
   #   ports:
   #     - "${RTPENGINE_BIND_UDP_PORT}:22222/udp"
   #     - "${RTPENGINE_RTP_PORT_MIN}-${RTPENGINE_RTP_PORT_MAX}:${RTPENGINE_RTP_PORT_MIN}-${RTPENGINE_RTP_PORT_MAX}/udp"
-    networks:
-      - omnivoip_net
-    restart: unless-stopped
+  #   networks:
+  #     - omnivoip_net
+  #   restart: unless-stopped
 
   # ==================== DIALER API ====================
   dialer-api:
