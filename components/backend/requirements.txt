@@ -65,8 +65,7 @@ pandas==2.1.4
 
 # VoIP/Telephony
 panoramisk==1.4  # Asterisk AMI
-av>=12.0.0       # PyAV for WebRTC (must be before aiortc)
-aiortc==1.6.0    # WebRTC
+aiortc==1.9.0    # WebRTC (updated for newer av/FFmpeg compatibility)
 
 # Server
 gunicorn==21.2.0
