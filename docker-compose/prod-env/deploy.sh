@@ -331,6 +331,21 @@ deploy_services() {
     
     cd "$INSTALL_DIR/docker-compose/prod-env"
     
+    # Configure system sysctls for Docker networking
+    log_info "Configuring system networking parameters..."
+    sysctl -w net.ipv4.ip_unprivileged_port_start=0 || log_warn "Could not set unprivileged port start"
+    sysctl -w net.ipv4.ip_forward=1 || log_warn "Could not enable IP forwarding"
+    
+    # Make changes permanent
+    cat > /etc/sysctl.d/99-omnivoip-docker.conf <<EOF
+# OmniVoIP Docker networking configuration
+net.ipv4.ip_unprivileged_port_start=0
+net.ipv4.ip_forward=1
+net.bridge.bridge-nf-call-iptables=1
+net.bridge.bridge-nf-call-ip6tables=1
+EOF
+    sysctl -p /etc/sysctl.d/99-omnivoip-docker.conf || log_warn "Could not apply sysctl settings"
+    
     # Clean Docker cache to ensure fresh builds
     log_info "Cleaning Docker cache..."
     docker system prune -af --volumes || log_warn "Failed to clean Docker cache"
