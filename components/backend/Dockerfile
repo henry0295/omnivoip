@@ -28,6 +28,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     libssl-dev \
     libffi-dev \
+    pkg-config \
+    libavformat-dev \
+    libavcodec-dev \
+    libavdevice-dev \
+    libavutil-dev \
+    libswscale-dev \
+    libswresample-dev \
+    libavfilter-dev \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
