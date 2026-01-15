@@ -3,6 +3,7 @@ services:
   postgresql:
     image: ${POSTGRES_IMG}
     container_name: ${PROJECT_NAME}-postgres
+    userns_mode: "host"
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
@@ -26,6 +27,7 @@ services:
   dialer-postgresql:
     image: ${POSTGRES_IMG}
     container_name: ${PROJECT_NAME}-dialer-postgres
+    userns_mode: "host"
     environment:
       POSTGRES_DB: ${DIALER_POSTGRES_DB}
       POSTGRES_USER: ${DIALER_POSTGRES_USER}
@@ -48,6 +50,7 @@ services:
   redis:
     image: ${REDIS_IMG}
     container_name: ${PROJECT_NAME}-redis
+    userns_mode: "host"
     command: redis-server --requirepass ${REDIS_PASSWORD} --appendonly yes
     volumes:
       - redis_data:/data
@@ -66,6 +69,7 @@ services:
   minio:
     image: ${MINIO_IMG}
     container_name: ${PROJECT_NAME}-minio
+    userns_mode: "host"
     command: server /data --console-address ":9001"
     environment:
       MINIO_ROOT_USER: ${MINIO_HTTP_ADMIN_USER}
@@ -357,6 +361,7 @@ services:
   nginx:
     image: ${NGINX_IMG}
     container_name: ${PROJECT_NAME}-nginx
+    userns_mode: "host"
     depends_on:
       - django-app
       - websockets
