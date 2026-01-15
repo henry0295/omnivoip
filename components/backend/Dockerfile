@@ -29,6 +29,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libssl-dev \
     libffi-dev \
     pkg-config \
+    ffmpeg \
     libavformat-dev \
     libavcodec-dev \
     libavdevice-dev \
@@ -36,6 +37,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libswscale-dev \
     libswresample-dev \
     libavfilter-dev \
+    libopus-dev \
+    libvpx-dev \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
