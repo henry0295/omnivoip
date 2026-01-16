@@ -223,6 +223,7 @@ services:
     build:
       context: ../../components/asterisk
       dockerfile: Dockerfile
+    network_mode: host
     cap_add:
       - NET_ADMIN
       - SYS_NICE
@@ -246,11 +247,6 @@ services:
       - asterisk_logs:/var/log/asterisk
       - asterisk_sounds:/var/lib/asterisk/sounds
       - ../configs/asterisk:/etc/asterisk/custom
-    ports:
-      - "5060:5060/udp"
-      - "${ACD_RTP_PORT_MIN}-${ACD_RTP_PORT_MAX}:${ACD_RTP_PORT_MIN}-${ACD_RTP_PORT_MAX}/udp"
-    networks:
-      - omnivoip_net
     restart: unless-stopped
 
   # ==================== KAMAILIO (WebRTC SIP Proxy) ====================
