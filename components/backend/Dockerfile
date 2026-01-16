@@ -46,8 +46,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY requirements.txt .
 
 # Install Python dependencies
-RUN pip install --upgrade pip setuptools wheel && \
-    pip install -r requirements.txt
+RUN pip install --default-timeout=100 --upgrade pip setuptools wheel && \
+    pip install --default-timeout=100 -r requirements.txt
 
 # Copy application code
 COPY . .
