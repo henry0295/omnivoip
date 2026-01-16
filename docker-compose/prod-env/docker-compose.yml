@@ -1,26 +1,27 @@
 services:
   # ==================== DATABASE ====================
   postgresql:
-  image: ${POSTGRES_IMG}
-  container_name: ${PROJECT_NAME}-postgres
-  environment:
-    POSTGRES_DB: ${POSTGRES_DB}
-    POSTGRES_USER: ${POSTGRES_USER}
-    POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    PGDATA: /var/lib/postgresql/data/pgdata
-  volumes:
-    - postgres_data:/var/lib/postgresql/data
-    - ../configs/postgres:/docker-entrypoint-initdb.d
-  ports:
-    - "${POSTGRES_EXT_PORT}:5432"
-  networks:
+    image: ${POSTGRES_IMG}
+    container_name: ${PROJECT_NAME}-postgres
+    #userns_mode: "host"
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ../configs/postgres:/docker-entrypoint-initdb.d
+    ports:
+      - "${POSTGRES_EXT_PORT}:5432"
+    networks:
       - omnivoip_net
-  healthcheck:
+    healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
-  restart: unless-stopped
+    restart: unless-stopped
 
   # Dialer PostgreSQL (separate database)
   dialer-postgresql:
