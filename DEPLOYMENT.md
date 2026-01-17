@@ -58,6 +58,18 @@ sudo ./deploy.sh
 - OS: Debian 11, Ubuntu 22.04 LTS
 - Red: 100 Mbps+
 
+### ⚙️ Virtualización Soportada
+
+| Tipo | Compatibilidad | Notas |
+|------|---------------|-------|
+| **Bare Metal** | ✅ Completa | Rendimiento óptimo |
+| **VPS Cloud** | ✅ Completa | AWS, GCP, Azure, DO, etc. |
+| **Proxmox VM** | ✅ Completa | KVM, sin configuración especial |
+| **Proxmox CT** | ✅ Compatible | Requiere nesting=1 ([ver guía](docker-compose/prod-env/PROXMOX-LXC.md)) |
+| **Docker Desktop** | ✅ Compatible | Windows/Mac (desarrollo/testing) |
+| **VMware** | ✅ Completa | ESXi, Workstation |
+| **Hyper-V** | ✅ Completa | Windows Server |
+
 ### Puertos Necesarios
 
 Asegúrate de abrir estos puertos en tu **firewall del proveedor cloud** (AWS Security Groups, GCP Firewall, etc.):

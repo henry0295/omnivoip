@@ -7,6 +7,7 @@ Entorno de producción para deployment de OmniVoIP en servidores VPS/Cloud.
 - [Quick Start](#quick-start)
 - [Scripts Disponibles](#scripts-disponibles)
 - [Configuración](#configuración)
+- [Proxmox LXC](#proxmox-lxc)
 - [Troubleshooting](#troubleshooting)
 - [Documentación Adicional](#documentación-adicional)
 
@@ -179,6 +180,48 @@ ACD_RTP_PORT_MAX=10100          # Aumentar si necesitas más capacidad
 | AMI | 5038 | TCP | Asterisk Manager |
 
 **Firewall:** Asegúrate de abrir estos puertos en el firewall de tu proveedor cloud.
+
+---
+
+## ⚙️ Proxmox LXC
+
+OmniVoIP v2.0 **funciona perfectamente en Proxmox LXC Containers** con configuración especial.
+
+### Configuración Requerida
+
+```bash
+# En Proxmox host
+pct set 100 -features nesting=1,keyctl=1,fuse=1
+pct set 100 -unprivileged 0
+pct reboot 100
+```
+
+**Características necesarias:**
+- ✅ `nesting=1` - Permite Docker dentro del CT
+- ✅ `keyctl=1` - Para systemd
+- ✅ `fuse=1` - Para overlayfs
+- ✅ CT Privilegiado recomendado
+
+### Quick Start Proxmox
+
+```bash
+# 1. Crear CT optimizado para Docker
+pct create 100 local:vztmpl/ubuntu-22.04-standard_22.04-1_amd64.tar.zst \
+  --hostname omnivoip \
+  --memory 8192 \
+  --cores 4 \
+  --features nesting=1,keyctl=1,fuse=1 \
+  --unprivileged 0
+
+# 2. Iniciar y acceder
+pct start 100
+pct enter 100
+
+# 3. Instalar OmniVoIP
+curl -sSL https://raw.githubusercontent.com/henry0295/omnivoip/main/docker-compose/prod-env/deploy.sh | bash
+```
+
+📖 **Guía completa:** [PROXMOX-LXC.md](PROXMOX-LXC.md)
 
 ---
 
