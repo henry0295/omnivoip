@@ -221,13 +221,8 @@ services:
     build:
       context: ../../components/asterisk
       dockerfile: Dockerfile
-    network_mode: host
-    cap_add:
-      - NET_ADMIN
-      - SYS_NICE
-      - NET_BIND_SERVICE
-    security_opt:
-      - apparmor=unconfined
+    # Removido network_mode: host por incompatibilidad
+    # Removido cap_add y security_opt por permisos
     depends_on:
       - postgresql
       - redis
@@ -245,6 +240,20 @@ services:
       - asterisk_logs:/var/log/asterisk
       - asterisk_sounds:/var/lib/asterisk/sounds
       - ../configs/asterisk:/etc/asterisk/custom
+    ports:
+      # SIP
+      - "5060:5060/udp"
+      - "5060:5060/tcp"
+      - "5061:5061/tcp"
+      # RTP Media
+      - "10000-10100:10000-10100/udp"
+      # HTTP/WebSocket
+      - "8088:8088/tcp"
+      - "8089:8089/tcp"
+      # AMI
+      - "5038:5038/tcp"
+    networks:
+      - omnivoip_net
     restart: unless-stopped
 
   # ==================== KAMAILIO (WebRTC SIP Proxy) ====================

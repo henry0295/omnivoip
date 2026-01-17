@@ -2,6 +2,10 @@
 
 ## Deployment Automático en VPS/Cloud
 
+⚠️ **IMPORTANTE - Nueva Versión 2.0**  
+Se han realizado cambios críticos en la arquitectura de red para garantizar compatibilidad universal.  
+Ver [CAMBIOS-CRITICOS-v2.md](docker-compose/prod-env/CAMBIOS-CRITICOS-v2.md) para detalles completos.
+
 ### Opción 1: Deployment Rápido (Recomendado)
 
 ```bash
@@ -11,6 +15,8 @@ curl -sSL https://raw.githubusercontent.com/henry0295/omnivoip/main/docker-compo
 
 El script te pedirá:
 - **Dominio**: Tu dominio (ej: `omnivoip.tuempresa.com`) o presiona ENTER para usar la IP pública
+
+✅ **Nuevo:** El script ahora valida automáticamente que no haya configuraciones problemáticas que causen errores de permisos.
 
 ### Opción 2: Deployment con Variables Pre-configuradas
 

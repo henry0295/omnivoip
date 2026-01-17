@@ -333,9 +333,27 @@ deploy_services() {
     
     # Validate docker-compose.yml for problematic configurations
     log_info "Validating docker-compose.yml..."
+    
+    local validation_failed=0
+    
+    # Check for userns_mode: "host"
     if grep -q '^[[:space:]]*userns_mode:[[:space:]]*"host"' docker-compose.yml 2>/dev/null; then
-        log_error "Found 'userns_mode: \"host\"' in docker-compose.yml. This causes deployment failures. Please comment out or remove these lines."
+        log_error "Found active 'userns_mode: \"host\"' in docker-compose.yml. This causes deployment failures."
+        validation_failed=1
     fi
+    
+    # Check for network_mode: host on asterisk with cap_add
+    if grep -A20 "container_name:.*asterisk" docker-compose.yml | grep -q '^[[:space:]]*network_mode:[[:space:]]*host'; then
+        log_error "Found 'network_mode: host' on asterisk service. This causes sysctl permission errors."
+        validation_failed=1
+    fi
+    
+    if [[ $validation_failed -eq 1 ]]; then
+        log_error "Docker compose validation failed. Please run './fix-userns-mode.sh' to fix these issues."
+        exit 1
+    fi
+    
+    log_info "Validation passed!"
     
     # Configure system sysctls for Docker networking
     log_info "Configuring system networking parameters..."
