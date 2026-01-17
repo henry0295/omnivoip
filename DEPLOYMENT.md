@@ -251,6 +251,35 @@ docker compose restart asterisk
 
 ## Troubleshooting
 
+### Error: "permission denied" con sysctl o userns_mode
+
+**Error completo:**
+```
+Error response from daemon: failed to create task for container: 
+failed to create shim task: OCI runtime create failed: runc create failed: 
+unable to start container process: error during container init: 
+open sysctl net.ipv4.ip_unprivileged_port_start file: reopen fd 8: permission denied
+```
+
+**Causa:** El archivo `docker-compose.yml` contiene `userns_mode: "host"` que no es compatible con todos los entornos Docker.
+
+**Solución:**
+```bash
+cd /opt/omnivoip/docker-compose/prod-env
+
+# Comentar todas las líneas userns_mode
+sed -i 's/^\([[:space:]]*\)userns_mode:/\1#userns_mode:/' docker-compose.yml
+
+# Verificar cambios
+grep userns_mode docker-compose.yml
+
+# Reiniciar deployment
+docker compose down
+docker compose up -d
+```
+
+**Prevención:** El script `deploy.sh` ahora valida automáticamente este problema antes de iniciar servicios.
+
 ### Servicios no inician
 
 ```bash

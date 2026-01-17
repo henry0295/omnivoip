@@ -331,20 +331,32 @@ deploy_services() {
     
     cd "$INSTALL_DIR/docker-compose/prod-env"
     
+    # Validate docker-compose.yml for problematic configurations
+    log_info "Validating docker-compose.yml..."
+    if grep -q '^[[:space:]]*userns_mode:[[:space:]]*"host"' docker-compose.yml 2>/dev/null; then
+        log_error "Found 'userns_mode: \"host\"' in docker-compose.yml. This causes deployment failures. Please comment out or remove these lines."
+    fi
+    
     # Configure system sysctls for Docker networking
     log_info "Configuring system networking parameters..."
-    sysctl -w net.ipv4.ip_unprivileged_port_start=0 || log_warn "Could not set unprivileged port start"
-    sysctl -w net.ipv4.ip_forward=1 || log_warn "Could not enable IP forwarding"
     
-    # Make changes permanent
-    cat > /etc/sysctl.d/99-omnivoip-docker.conf <<EOF
+    # Try to set sysctl parameters (may fail in some environments)
+    if sysctl -w net.ipv4.ip_forward=1 2>/dev/null; then
+        log_info "IP forwarding enabled"
+    else
+        log_warn "Could not enable IP forwarding (may not be needed)"
+    fi
+    
+    # Create sysctl config file for persistence
+    cat > /etc/sysctl.d/99-omnivoip-docker.conf <<EOF || true
 # OmniVoIP Docker networking configuration
-net.ipv4.ip_unprivileged_port_start=0
 net.ipv4.ip_forward=1
 net.bridge.bridge-nf-call-iptables=1
 net.bridge.bridge-nf-call-ip6tables=1
 EOF
-    sysctl -p /etc/sysctl.d/99-omnivoip-docker.conf || log_warn "Could not apply sysctl settings"
+    
+    # Apply settings (non-blocking)
+    sysctl -p /etc/sysctl.d/99-omnivoip-docker.conf 2>/dev/null || log_warn "Some sysctl settings could not be applied (continuing anyway)"
     
     # Clean Docker cache to ensure fresh builds
     log_info "Cleaning Docker cache..."
