@@ -394,7 +394,7 @@ EOF
     
     # Run migrations
     log_info "Running database migrations..."
-    docker compose exec -T django python manage.py migrate || log_warn "Migrations failed, may need manual intervention"
+    docker compose exec -T django-app python manage.py migrate || log_warn "Migrations failed, may need manual intervention"
     
     # Create superuser
     log_info "Setting up admin user..."
